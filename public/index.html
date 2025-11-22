@@ -16,6 +16,7 @@
       padding: 16px 0;
       background: #f5f5f5;
       color: #222;
+      font-size: 18px; /* ★ PC 基準フォントサイズを大きめに */
     }
 
     .page {
@@ -33,13 +34,13 @@
     }
 
     h1 {
-      font-size: 22px;
+      font-size: 26px;  /* ★ タイトルも少し大きめ */
       margin: 0 0 4px;
       font-weight: 600;
     }
 
     .subtitle {
-      font-size: 13px;
+      font-size: 15px;
       color: #666;
       margin: 0;
     }
@@ -55,11 +56,11 @@
     .nav button {
       border: 1px solid #bbb;
       background: #f4f4f4;
-      padding: 6px 12px;
-      font-size: 13px;
+      padding: 7px 14px;
+      font-size: 15px;
       cursor: pointer;
       border-radius: 0;
-      min-width: 80px;
+      min-width: 90px;
     }
 
     .nav button:hover {
@@ -77,6 +78,7 @@
       padding: 10px 12px;
       border: 1px solid #ddd;
       background: #fafafa;
+      font-size: 16px;
     }
 
     .note {
@@ -84,12 +86,12 @@
       padding: 8px 10px;
       border: 1px solid #e0e0e0;
       background: #f8f8f8;
-      font-size: 13px;
-      line-height: 1.6;
+      font-size: 15px;
+      line-height: 1.7;
     }
 
     .label {
-      font-size: 13px;
+      font-size: 15px;
       margin-bottom: 4px;
       display: block;
       font-weight: 500;
@@ -97,8 +99,8 @@
 
     .input {
       width: 100%;
-      padding: 8px 10px;
-      font-size: 14px;
+      padding: 9px 10px;
+      font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 0;
     }
@@ -110,13 +112,13 @@
 
     .button {
       margin-top: 8px;
-      padding: 7px 16px;
-      font-size: 14px;
+      padding: 8px 18px;
+      font-size: 16px;
       cursor: pointer;
       border: 1px solid #555;
       background: #ffffff;
       border-radius: 0;
-      min-width: 110px;
+      min-width: 120px;
     }
 
     .button:hover {
@@ -129,8 +131,8 @@
 
     .button-small {
       margin-top: 6px;
-      padding: 4px 10px;
-      font-size: 12px;
+      padding: 5px 11px;
+      font-size: 14px;
       cursor: pointer;
       border: 1px solid #777;
       background: #ffffff;
@@ -143,13 +145,13 @@
 
     .status-text {
       margin-top: 6px;
-      font-size: 13px;
+      font-size: 15px;
       color: #555;
     }
 
     .result-count {
       margin-top: 8px;
-      font-size: 13px;
+      font-size: 15px;
       color: #555;
     }
 
@@ -168,13 +170,13 @@
       display: flex;
       flex-direction: column;
       height: 100%;
-      font-size: 13px;
+      font-size: 14px;
     }
 
     .video-title {
       font-weight: 600;
       margin-bottom: 4px;
-      font-size: 14px;
+      font-size: 15px;
       line-height: 1.4;
     }
 
@@ -184,7 +186,7 @@
     }
 
     .video-url a {
-      font-size: 12px;
+      font-size: 13px;
       color: #1565c0;
       text-decoration: none;
     }
@@ -194,7 +196,7 @@
     }
 
     .video-tags {
-      font-size: 12px;
+      font-size: 13px;
       color: #666;
       margin-top: 4px;
       margin-bottom: 8px;
@@ -241,10 +243,11 @@
       margin-top: 0;
     }
 
-    /* スマホ向け調整 */
+    /* スマホ向け調整（スマホではフォントを少し小さく戻す） */
     @media (max-width: 600px) {
       body {
         padding: 8px 0;
+        font-size: 15px; /* ★ スマホでは標準サイズ寄りに */
       }
       .page {
         border-left: none;
@@ -255,11 +258,28 @@
         padding-top: 14px;
       }
       h1 {
-        font-size: 19px;
+        font-size: 20px;
+      }
+      .subtitle {
+        font-size: 13px;
       }
       .nav button {
         flex: 1 1 auto;
         text-align: center;
+        font-size: 14px;
+        padding: 6px 10px;
+      }
+      .box {
+        font-size: 14px;
+      }
+      .note {
+        font-size: 13px;
+      }
+      .input {
+        font-size: 15px;
+      }
+      .button {
+        font-size: 15px;
       }
       #results {
         grid-template-columns: 1fr;  /* 1列表示 */
@@ -291,7 +311,7 @@
         ・何か不具合や要望がございましたら管理者までご連絡ください<br />
         ・検索は「タイトル＋タグ」に対して、かな／カナの違いと簡単な同義語対応<br />
         ・別称（通称や外題名、タグ）編集は誰でも可能です（検索結果から「別称を追加」ボタン）<br />
-        ・"この動画を再生"ボタンを押すことでyoutubeが起動します<br />
+        ・"この動画を再生"ボタンを押すことでもyoutubeが起動します<br />
         ・検索結果は 1ページ 50件ずつ表示、「もっと表示」で追加読み込みします<br />
       </div>
 
