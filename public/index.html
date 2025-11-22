@@ -2,202 +2,382 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>YouTube 動画検索サイト（β版）</title>
+  <title>YouTube 動画検索サイト（試験運用）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: sans-serif;
-      max-width: 900px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      margin: 0;
+      padding: 16px 0;
+      background: #f5f5f5;
+      color: #222;
+    }
+
+    .page {
+      max-width: 1100px;
       margin: 0 auto;
-      padding: 16px;
+      padding: 0 16px 24px;
+      background: #ffffff;
+      border: 1px solid #ddd;
     }
+
+    header {
+      padding: 20px 0 10px;
+      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 12px;
+    }
+
     h1 {
-      margin-bottom: 8px;
+      font-size: 22px;
+      margin: 0 0 4px;
+      font-weight: 600;
     }
-    .note {
-      margin-top: 16px;
-      padding: 8px;
-      border: 1px solid #ccc;
-      background: #f9f9f9;
+
+    .subtitle {
+      font-size: 13px;
+      color: #666;
+      margin: 0;
     }
+
+    /* ナビゲーション */
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+    }
+
+    .nav button {
+      border: 1px solid #bbb;
+      background: #f4f4f4;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 0;
+      min-width: 80px;
+    }
+
+    .nav button:hover {
+      background: #e9e9e9;
+    }
+
+    .nav button:active {
+      background: #ddd;
+    }
+
+    /* 共通ボックス */
     .box {
-      margin-top: 16px;
-      margin-bottom: 16px;
-      padding: 12px;
+      margin-top: 14px;
+      margin-bottom: 14px;
+      padding: 10px 12px;
       border: 1px solid #ddd;
       background: #fafafa;
     }
+
+    .note {
+      margin-top: 6px;
+      padding: 8px 10px;
+      border: 1px solid #e0e0e0;
+      background: #f8f8f8;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
     .label {
-      font-size: 14px;
+      font-size: 13px;
       margin-bottom: 4px;
       display: block;
+      font-weight: 500;
     }
+
     .input {
       width: 100%;
-      padding: 8px;
-      font-size: 16px;
-      box-sizing: border-box;
+      padding: 8px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 0;
     }
+
+    .input:focus {
+      outline: none;
+      border-color: #666;
+    }
+
     .button {
       margin-top: 8px;
-      padding: 6px 12px;
+      padding: 7px 16px;
       font-size: 14px;
       cursor: pointer;
+      border: 1px solid #555;
+      background: #ffffff;
+      border-radius: 0;
+      min-width: 110px;
     }
+
+    .button:hover {
+      background: #f0f0f0;
+    }
+
+    .button:active {
+      background: #e0e0e0;
+    }
+
     .button-small {
       margin-top: 6px;
-      padding: 4px 8px;
+      padding: 4px 10px;
       font-size: 12px;
       cursor: pointer;
+      border: 1px solid #777;
+      background: #ffffff;
+      border-radius: 0;
     }
+
+    .button-small:hover {
+      background: #f0f0f0;
+    }
+
     .status-text {
       margin-top: 6px;
       font-size: 13px;
       color: #555;
     }
+
     .result-count {
       margin-top: 8px;
-      font-size: 14px;
+      font-size: 13px;
       color: #555;
     }
+
+    /* 検索結果レイアウト */
+    #results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
     .video-card {
       border: 1px solid #ddd;
-      padding: 8px 12px;
-      margin-bottom: 12px;
+      padding: 10px 10px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      font-size: 13px;
     }
+
     .video-title {
-      font-weight: bold;
+      font-weight: 600;
       margin-bottom: 4px;
+      font-size: 14px;
+      line-height: 1.4;
     }
+
+    .video-url {
+      margin-bottom: 4px;
+      word-break: break-all;
+    }
+
+    .video-url a {
+      font-size: 12px;
+      color: #1565c0;
+      text-decoration: none;
+    }
+
+    .video-url a:hover {
+      text-decoration: underline;
+    }
+
     .video-tags {
       font-size: 12px;
       color: #666;
       margin-top: 4px;
-    }
-    .video-url a {
-      font-size: 13px;
-    }
-    .nav {
-      margin-top: 8px;
       margin-bottom: 8px;
     }
-    .nav button {
-      margin-right: 8px;
-      padding: 4px 10px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    .hidden {
-      display: none;
-    }
+
     .video-player {
       margin-top: 8px;
     }
-    .more-container {
-      margin-top: 12px;
-      text-align: center;
+
+    .video-player img,
+    .video-player iframe {
+      width: 100% !important;
+      height: auto;
+      display: block;
     }
-    .main-search-btn {
-      margin-top: 20px;
-      padding: 12px 32px; 
-      font-weight: bold;
+
+    .video-player img {
+      object-fit: cover;
+    }
+
+    .video-player button {
+      margin-top: 6px;
+    }
+
+    .more-container {
+      margin-top: 14px;
+      text-align: center;
+      grid-column: 1 / -1; /* 全カラムをまたぐ */
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* ホームの操作ボックス */
+    .home-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .home-actions .button {
+      margin-top: 0;
+    }
+
+    /* スマホ向け調整 */
+    @media (max-width: 600px) {
+      body {
+        padding: 8px 0;
+      }
+      .page {
+        border-left: none;
+        border-right: none;
+        padding: 0 10px 16px;
+      }
+      header {
+        padding-top: 14px;
+      }
+      h1 {
+        font-size: 19px;
+      }
+      .nav button {
+        flex: 1 1 auto;
+        text-align: center;
+      }
+      #results {
+        grid-template-columns: 1fr;  /* 1列表示 */
+      }
     }
   </style>
 </head>
 <body>
-  <h1>YouTube 動画検索サイト（開発中）</h1>
+  <div class="page">
+    <header>
+      <h1>YouTube 動画検索サイト（開発中）</h1>
+      <p class="subtitle">
+        限定公開／公開動画をまとめて検索するための内部ツールです。関係者以外の共有はご遠慮ください
+      </p>
 
-  <!-- ナビゲーション -->
-  <div class="nav">
-    <button id="navHome">ホーム</button>
-    <button id="navSearch">検索</button>
-    <button id="navAdmin">管理者画面</button>
-  </div>
+      <!-- ナビゲーション -->
+      <div class="nav">
+        <button id="navHome">ホーム</button>
+        <button id="navSearch">検索</button>
+        <button id="navAdmin">管理者画面</button>
+      </div>
+    </header>
 
-  <!-- ホーム画面 -->
-  <div id="homeSection">
-    <div class="note">
-      <strong>現在の状態：</strong><br />
-      ・動画データは SQLite (database.sqlite) の videos テーブルに保存<br />
-      ・動画URL / 再生リストURLを貼ると YouTube API 経由でDBに登録（管理者のみ）<br />
-      ・検索は「タイトル＋タグ」に対して、かな／カナの違いと簡単な同義語を吸収<br />
-      ・タグ編集は誰でも可能です（検索結果から「タグ編集」ボタン）<br />
-      ・YouTube URL の動画は、カード内サムネをクリックするとその場で再生できます<br />
-      ・検索結果は 1ページ 50件ずつ表示、「もっと表示」で追加読み込みします<br />
-    </div>
+    <!-- ホーム画面 -->
+    <div id="homeSection">
+      <div class="note">
+        <strong>現在の状態：</strong><br />
+        ・このサイトは市川左次郎が作成管理し、土橋慶一が動画管理しております<br />
+        ・何か不具合や要望がございましたら管理者までご連絡ください<br />
+        ・検索は「タイトル＋タグ」に対して、かな／カナの違いと簡単な同義語対応<br />
+        ・別称（通称や外題名、タグ）編集は誰でも可能です（検索結果から「別称を追加」ボタン）<br />
+        ・"この動画を再生"ボタンを押すことでyoutubeが起動します<br />
+        ・検索結果は 1ページ 50件ずつ表示、「もっと表示」で追加読み込みします<br />
+      </div>
 
-    <div class="box">
-      <p>やりたい作業を選んでください。</p>
-      <button id="goSearch" class="main-search-btn">検索する</button>
-      <button id="goAdmin" class="button">管理者画面を開く</button>
-    </div>
-  </div>
-
-  <!-- 検索画面 -->
-  <div id="searchSection" class="hidden">
-    <div class="box">
-      <span class="label">検索ワード（例：猫, ねこ, ネコ）</span>
-      <input
-        id="searchInput"
-        type="text"
-        class="input"
-        placeholder="タイトル or タグに含まれる文字で検索"
-      />
-      <div id="resultCount" class="result-count"></div>
-    </div>
-
-    <div id="results"></div>
-  </div>
-
-  <!-- 管理者画面 -->
-  <div id="adminSection" class="hidden">
-    <!-- ログインフォーム -->
-    <div class="box" id="adminLoginBox">
-      <span class="label">管理者ログイン</span>
-      <input
-        id="adminPasswordInput"
-        type="password"
-        class="input"
-        placeholder="管理者パスワード"
-      />
-      <button id="adminLoginButton" class="button">ログイン</button>
-      <div id="adminLoginMessage" class="status-text"></div>
-    </div>
-
-    <!-- ログイン後にだけ表示する領域 -->
-    <div id="adminContentBox" class="hidden">
       <div class="box">
-        <div class="status-text">
-          管理者としてログイン中です。新規登録などの操作ができます。
-          <button id="adminLogoutButton" class="button-small" style="margin-left: 8px;">
-            ログアウト
-          </button>
+        <p>行いたい作業を選んでください。</p>
+        <div class="home-actions">
+          <button id="goSearch" class="button">検索する</button>
         </div>
       </div>
+    </div>
 
-      <!-- 一本動画の新規登録 -->
+    <!-- 検索画面 -->
+    <div id="searchSection" class="hidden">
       <div class="box">
-        <span class="label">YouTube 動画URLから登録</span>
+        <span class="label">検索ワード（例：勧進帳、高島屋、平成元年など）</span>
         <input
-          id="registerVideoUrl"
+          id="searchInput"
           type="text"
           class="input"
-          placeholder="https://www.youtube.com/watch?v=... または https://youtu.be/..."
+          placeholder="タイトル or 別称に含まれる文字で検索"
         />
-        <button id="registerVideoButton" class="button">動画を登録</button>
-        <div id="registerVideoMessage" class="status-text"></div>
+        <div id="resultCount" class="result-count"></div>
       </div>
 
-      <!-- 再生リストの新規登録 -->
-      <div class="box">
-        <span class="label">YouTube 再生リストURLから登録（他人のチャンネルでもOK・公開/限定公開対応）</span>
+      <div id="results"></div>
+    </div>
+
+    <!-- 管理者画面 -->
+    <div id="adminSection" class="hidden">
+      <!-- ログインフォーム -->
+      <div class="box" id="adminLoginBox">
+        <span class="label">管理者ログイン</span>
         <input
-          id="registerPlaylistUrl"
-          type="text"
+          id="adminPasswordInput"
+          type="password"
           class="input"
-          placeholder="https://www.youtube.com/playlist?list=... または watch?v=...&list=..."
+          placeholder="管理者パスワード"
         />
-        <button id="registerPlaylistButton" class="button">再生リストの動画を登録</button>
-        <div id="registerPlaylistMessage" class="status-text"></div>
+        <button id="adminLoginButton" class="button">ログイン</button>
+        <div id="adminLoginMessage" class="status-text"></div>
+      </div>
+
+      <!-- ログイン後にだけ表示する領域 -->
+      <div id="adminContentBox" class="hidden">
+        <div class="box">
+          <div class="status-text">
+            管理者としてログイン中です。新規登録などの操作ができます。
+            <button
+              id="adminLogoutButton"
+              class="button-small"
+              style="margin-left: 8px;"
+            >
+              ログアウト
+            </button>
+          </div>
+        </div>
+
+        <!-- 一本動画の新規登録 -->
+        <div class="box">
+          <span class="label">一本動画の新規登録</span>
+          <input
+            id="registerVideoUrl"
+            type="text"
+            class="input"
+            placeholder="https://www.youtube.com/watch?v=... または https://youtu.be/..."
+          />
+          <button id="registerVideoButton" class="button">動画を登録</button>
+          <div id="registerVideoMessage" class="status-text"></div>
+        </div>
+
+        <!-- 再生リストの新規登録 -->
+        <div class="box">
+          <span class="label">
+            再生リストの新規登録（他人のチャンネルでもOK・公開/限定公開対応）
+          </span>
+          <input
+            id="registerPlaylistUrl"
+            type="text"
+            class="input"
+            placeholder="https://www.youtube.com/playlist?list=... または watch?v=...&list=..."
+          />
+          <button id="registerPlaylistButton" class="button">
+            再生リストの動画を登録
+          </button>
+          <div id="registerPlaylistMessage" class="status-text"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -212,7 +392,6 @@
     const navSearch = document.getElementById("navSearch");
     const navAdmin = document.getElementById("navAdmin");
     const goSearch = document.getElementById("goSearch");
-    const goAdmin = document.getElementById("goAdmin");
 
     function showSection(name) {
       homeSection.classList.add("hidden");
@@ -232,7 +411,6 @@
     navSearch.addEventListener("click", () => showSection("search"));
     navAdmin.addEventListener("click", () => showSection("admin"));
     goSearch.addEventListener("click", () => showSection("search"));
-    goAdmin.addEventListener("click", () => showSection("admin"));
 
     // ===== クライアント状態 =====
     let videos = [];
@@ -245,7 +423,7 @@
     const synonymMap = {
       "ねこ": ["ねこ", "ネコ", "猫"],
       "ネコ": ["ねこ", "ネコ", "猫"],
-      "猫":   ["ねこ", "ネコ", "猫"],
+      "猫": ["ねこ", "ネコ", "猫"],
     };
 
     // DOM
@@ -264,9 +442,14 @@
     const registerVideoButton = document.getElementById("registerVideoButton");
     const registerVideoMessage = document.getElementById("registerVideoMessage");
 
-    const registerPlaylistUrlInput = document.getElementById("registerPlaylistUrl");
-    const registerPlaylistButton = document.getElementById("registerPlaylistButton");
-    const registerPlaylistMessage = document.getElementById("registerPlaylistMessage");
+    const registerPlaylistUrlInput =
+      document.getElementById("registerPlaylistUrl");
+    const registerPlaylistButton = document.getElementById(
+      "registerPlaylistButton"
+    );
+    const registerPlaylistMessage = document.getElementById(
+      "registerPlaylistMessage"
+    );
 
     // ===== 日本語正規化 =====
     function katakanaToHiragana(str) {
@@ -310,7 +493,8 @@
         applySearch(); // 初回は検索条件なしで全件
       } catch (e) {
         console.error("動画一覧の取得に失敗:", e);
-        if (resultsDiv) resultsDiv.textContent = "動画一覧の取得に失敗しました。";
+        if (resultsDiv) resultsDiv.textContent =
+          "動画一覧の取得に失敗しました。";
         if (resultCount) resultCount.textContent = "";
       }
     }
@@ -351,8 +535,7 @@
           registerVideoMessage.textContent =
             `登録済みの動画です: ${data.title}`;
         } else {
-          registerVideoMessage.textContent =
-            `登録しました: ${data.title}`;
+          registerVideoMessage.textContent = `登録しました: ${data.title}`;
         }
 
         registerVideoUrlInput.value = "";
@@ -366,7 +549,8 @@
     async function registerPlaylist() {
       const url = registerPlaylistUrlInput.value.trim();
       if (!url) {
-        registerPlaylistMessage.textContent = "再生リストのURLを入力してください。";
+        registerPlaylistMessage.textContent =
+          "再生リストのURLを入力してください。";
         return;
       }
       registerPlaylistMessage.textContent = "再生リストから取得中...";
@@ -421,7 +605,8 @@
     adminLoginButton.addEventListener("click", async () => {
       const pw = adminPasswordInput.value.trim();
       if (!pw) {
-        adminLoginMessage.textContent = "パスワードを入力してください。";
+        adminLoginMessage.textContent =
+          "パスワードを入力してください。";
         return;
       }
       adminLoginMessage.textContent = "ログイン中...";
@@ -439,7 +624,8 @@
           adminLoginMessage.textContent = "ログインしました。";
           renderAdminUI();
         } else {
-          adminLoginMessage.textContent = data.error || "ログインに失敗しました。";
+          adminLoginMessage.textContent =
+            data.error || "ログインに失敗しました。";
         }
       } catch (e) {
         console.error(e);
@@ -459,7 +645,7 @@
 
     // ===== 検索 =====
     function applySearch() {
-      const raw = (searchInput && searchInput.value || "").trim();
+      const raw = ((searchInput && searchInput.value) || "").trim();
 
       let filtered;
       if (raw === "") {
@@ -474,7 +660,9 @@
             break;
           }
         }
-        const normalizedCandidates = queryCandidates.map((q) => normalizeJa(q));
+        const normalizedCandidates = queryCandidates.map((q) =>
+          normalizeJa(q)
+        );
 
         filtered = videos.filter((video) => {
           const tags = video.tags || [];
@@ -520,28 +708,30 @@
         const link = document.createElement("a");
         link.href = video.url;
         link.target = "_blank";
+        link.rel = "noopener noreferrer";
         link.textContent = video.url;
         urlDiv.appendChild(link);
 
         const tagsDiv = document.createElement("div");
         tagsDiv.className = "video-tags";
-        const tags = video.tags && video.tags.length > 0
-          ? video.tags.join(", ")
-          : "なし";
+        const tags =
+          video.tags && video.tags.length > 0
+            ? video.tags.join(", ")
+            : "なし";
         tagsDiv.textContent = "タグ: " + tags;
 
         card.appendChild(title);
         card.appendChild(urlDiv);
         card.appendChild(tagsDiv);
 
-        // ★ タグ編集ボタンは誰でも表示
+        // タグ編集ボタン（誰でも可）
         const editBtn = document.createElement("button");
         editBtn.className = "button-small";
-        editBtn.textContent = "タグ編集";
+        editBtn.textContent = "別称編集";
         editBtn.addEventListener("click", async () => {
           const current = (video.tags || []).join(", ");
           const input = window.prompt(
-            `動画タイトル: ${video.title}\nタグをカンマ区切りで編集してください:`,
+            ` ${video.title}\nの別称を点（、）で区切りをつけて入力してください:`,
             current
           );
           if (input === null) return;
@@ -550,12 +740,12 @@
             await fetchVideos();
           } catch (e) {
             console.error(e);
-            window.alert("タグ更新に失敗しました。");
+            window.alert("別称、タグ更新に失敗しました。");
           }
         });
         card.appendChild(editBtn);
 
-        // サムネ→クリックしたときだけ iframe をロード
+        // サムネ → クリックしたときだけ iframe をロード
         const videoId = extractYoutubeId(video.url);
         if (videoId) {
           const playerDiv = document.createElement("div");
@@ -564,10 +754,6 @@
           const thumb = document.createElement("img");
           thumb.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
           thumb.alt = video.title;
-          thumb.style.width = "320px";
-          thumb.style.height = "180px";
-          thumb.style.objectFit = "cover";
-          thumb.style.display = "block";
           thumb.style.cursor = "pointer";
 
           const playBtn = document.createElement("button");
@@ -580,8 +766,8 @@
             playerDiv.innerHTML = "";
 
             const iframe = document.createElement("iframe");
-            iframe.width = "320";
-            iframe.height = "180";
+            iframe.width = "100%";
+            iframe.height = "100%";
             iframe.src = `https://www.youtube.com/embed/${videoId}`;
             iframe.title = "YouTube video player";
             iframe.frameBorder = "0";
@@ -638,4 +824,3 @@
   </script>
 </body>
 </html>
-
