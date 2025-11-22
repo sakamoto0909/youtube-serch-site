@@ -402,7 +402,16 @@
     </div>
   </div>
 
+  <script src="./kabuki-synonym-map.js"></script>
+
   <script>
+
+    // ★ ここでグローバルから受け取る
+      const synonymMap = window.kabukiSynonymMap || {};
+
+    console.log(synonymMap["白浪五人男"]); // 配列がちゃんと出ればOK
+
+
     // ===== セクション切り替え =====
     const homeSection = document.getElementById("homeSection");
     const searchSection = document.getElementById("searchSection");
@@ -438,13 +447,6 @@
     let currentPage = 1;
     const PAGE_SIZE = 50;
     let isAdmin = false; // 管理者かどうか（新規登録UI用）
-
-    // 簡易シソーラス
-    const synonymMap = {
-      "ねこ": ["ねこ", "ネコ", "猫"],
-      "ネコ": ["ねこ", "ネコ", "猫"],
-      "猫": ["ねこ", "ネコ", "猫"],
-    };
 
     // DOM
     const searchInput = document.getElementById("searchInput");
@@ -665,38 +667,53 @@
 
     // ===== 検索 =====
     function applySearch() {
-      const raw = ((searchInput && searchInput.value) || "").trim();
+        const raw = ((searchInput && searchInput.value) || "").trim();
 
-      let filtered;
-      if (raw === "") {
-        filtered = videos.slice();
-      } else {
-        const normalizedRaw = normalizeJa(raw);
-        let queryCandidates = [raw];
+        let filtered;
+        if (raw === "") {
+            // 何も入力されていなければ全件
+            filtered = videos.slice();
+        } else {
+            const normalizedRaw = normalizeJa(raw);
 
-        for (const [key, group] of Object.entries(synonymMap)) {
-          if (normalizeJa(key) === normalizedRaw) {
-            queryCandidates = group;
-            break;
-          }
+            // ★ 入力語＋シソーラスから候補語を集める
+            const candidateSet = new Set();
+            candidateSet.add(raw); // 入力そのものも使う
+
+            // シソーラスの全グループを走査して、
+            // 「読みや別名のどこかに部分一致するグループ」を全部拾う
+            for (const group of Object.values(synonymMap)) {
+            let hitGroup = false;
+            for (const name of group) {
+                if (normalizeJa(name).includes(normalizedRaw)) {
+                hitGroup = true;
+                break;
+                }
+            }
+            if (hitGroup) {
+                for (const name of group) {
+                candidateSet.add(name);
+                }
+            }
+            }
+
+            const queryCandidates = Array.from(candidateSet);
+            const normalizedCandidates = queryCandidates.map((q) => normalizeJa(q));
+
+            // ★ タイトル＋タグに対して部分一致
+            filtered = videos.filter((video) => {
+            const tags = video.tags || [];
+            const haystack = normalizeJa(
+                (video.title || "") + " " + tags.join(" ")
+            );
+            return normalizedCandidates.some((q) => haystack.includes(q));
+            });
         }
-        const normalizedCandidates = queryCandidates.map((q) =>
-          normalizeJa(q)
-        );
 
-        filtered = videos.filter((video) => {
-          const tags = video.tags || [];
-          const haystack = normalizeJa(
-            (video.title || "") + " " + tags.join(" ")
-          );
-          return normalizedCandidates.some((q) => haystack.includes(q));
-        });
-      }
-
-      filteredVideos = filtered;
-      currentPage = 1;
-      renderResults();
-    }
+        filteredVideos = filtered;
+        currentPage = 1;
+        renderResults();
+        }
 
     function renderResults() {
       if (!resultsDiv || !resultCount) return;
