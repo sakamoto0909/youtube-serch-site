@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>YouTube 動画検索サイト（開発中）</title>
+  <title>YouTube 動画検索サイト（β版）</title>
   <style>
     body {
       font-family: sans-serif;
@@ -96,6 +96,11 @@
       margin-top: 12px;
       text-align: center;
     }
+    .main-search-btn {
+      margin-top: 20px;
+      padding: 12px 32px; 
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -122,7 +127,7 @@
 
     <div class="box">
       <p>やりたい作業を選んでください。</p>
-      <button id="goSearch" class="button">検索する</button>
+      <button id="goSearch" class="main-search-btn">検索する</button>
       <button id="goAdmin" class="button">管理者画面を開く</button>
     </div>
   </div>
@@ -633,3 +638,4 @@
   </script>
 </body>
 </html>
+
