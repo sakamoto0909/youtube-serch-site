@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>YouTube 動画検索サイト（開発中）</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    h1 {
+      margin-bottom: 8px;
+    }
+    .note {
+      margin-top: 16px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+    }
+    .box {
+      margin-top: 16px;
+      margin-bottom: 16px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+    }
+    .label {
+      font-size: 14px;
+      margin-bottom: 4px;
+      display: block;
+    }
+    .input {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .button {
+      margin-top: 8px;
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .button-small {
+      margin-top: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .status-text {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #555;
+    }
+    .result-count {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #555;
+    }
+    .video-card {
+      border: 1px solid #ddd;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+    }
+    .video-title {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .video-tags {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+    .video-url a {
+      font-size: 13px;
+    }
+    .nav {
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+    .nav button {
+      margin-right: 8px;
+      padding: 4px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .hidden {
+      display: none;
+    }
+    .video-player {
+      margin-top: 8px;
+    }
+    .more-container {
+      margin-top: 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>YouTube 動画検索サイト（開発中）</h1>
+
+  <!-- ナビゲーション -->
+  <div class="nav">
+    <button id="navHome">ホーム</button>
+    <button id="navSearch">検索</button>
+    <button id="navAdmin">管理者画面</button>
+  </div>
+
+  <!-- ホーム画面 -->
+  <div id="homeSection">
+    <div class="note">
+      <strong>現在の状態：</strong><br />
+      ・動画データは SQLite (database.sqlite) の videos テーブルに保存<br />
+      ・動画URL / 再生リストURLを貼ると YouTube API 経由でDBに登録（管理者のみ）<br />
+      ・検索は「タイトル＋タグ」に対して、かな／カナの違いと簡単な同義語を吸収<br />
+      ・タグ編集は誰でも可能です（検索結果から「タグ編集」ボタン）<br />
+      ・YouTube URL の動画は、カード内サムネをクリックするとその場で再生できます<br />
+      ・検索結果は 1ページ 50件ずつ表示、「もっと表示」で追加読み込みします<br />
+    </div>
+
+    <div class="box">
+      <p>やりたい作業を選んでください。</p>
+      <button id="goSearch" class="button">検索する</button>
+      <button id="goAdmin" class="button">管理者画面を開く</button>
+    </div>
+  </div>
+
+  <!-- 検索画面 -->
+  <div id="searchSection" class="hidden">
+    <div class="box">
+      <span class="label">検索ワード（例：猫, ねこ, ネコ）</span>
+      <input
+        id="searchInput"
+        type="text"
+        class="input"
+        placeholder="タイトル or タグに含まれる文字で検索"
+      />
+      <div id="resultCount" class="result-count"></div>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+  <!-- 管理者画面 -->
+  <div id="adminSection" class="hidden">
+    <!-- ログインフォーム -->
+    <div class="box" id="adminLoginBox">
+      <span class="label">管理者ログイン</span>
+      <input
+        id="adminPasswordInput"
+        type="password"
+        class="input"
+        placeholder="管理者パスワード"
+      />
+      <button id="adminLoginButton" class="button">ログイン</button>
+      <div id="adminLoginMessage" class="status-text"></div>
+    </div>
+
+    <!-- ログイン後にだけ表示する領域 -->
+    <div id="adminContentBox" class="hidden">
+      <div class="box">
+        <div class="status-text">
+          管理者としてログイン中です。新規登録などの操作ができます。
+          <button id="adminLogoutButton" class="button-small" style="margin-left: 8px;">
+            ログアウト
+          </button>
+        </div>
+      </div>
+
+      <!-- 一本動画の新規登録 -->
+      <div class="box">
+        <span class="label">YouTube 動画URLから登録</span>
+        <input
+          id="registerVideoUrl"
+          type="text"
+          class="input"
+          placeholder="https://www.youtube.com/watch?v=... または https://youtu.be/..."
+        />
+        <button id="registerVideoButton" class="button">動画を登録</button>
+        <div id="registerVideoMessage" class="status-text"></div>
+      </div>
+
+      <!-- 再生リストの新規登録 -->
+      <div class="box">
+        <span class="label">YouTube 再生リストURLから登録（他人のチャンネルでもOK・公開/限定公開対応）</span>
+        <input
+          id="registerPlaylistUrl"
+          type="text"
+          class="input"
+          placeholder="https://www.youtube.com/playlist?list=... または watch?v=...&list=..."
+        />
+        <button id="registerPlaylistButton" class="button">再生リストの動画を登録</button>
+        <div id="registerPlaylistMessage" class="status-text"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== セクション切り替え =====
+    const homeSection = document.getElementById("homeSection");
+    const searchSection = document.getElementById("searchSection");
+    const adminSection = document.getElementById("adminSection");
+
+    const navHome = document.getElementById("navHome");
+    const navSearch = document.getElementById("navSearch");
+    const navAdmin = document.getElementById("navAdmin");
+    const goSearch = document.getElementById("goSearch");
+    const goAdmin = document.getElementById("goAdmin");
+
+    function showSection(name) {
+      homeSection.classList.add("hidden");
+      searchSection.classList.add("hidden");
+      adminSection.classList.add("hidden");
+
+      if (name === "home") {
+        homeSection.classList.remove("hidden");
+      } else if (name === "search") {
+        searchSection.classList.remove("hidden");
+      } else if (name === "admin") {
+        adminSection.classList.remove("hidden");
+      }
+    }
+
+    navHome.addEventListener("click", () => showSection("home"));
+    navSearch.addEventListener("click", () => showSection("search"));
+    navAdmin.addEventListener("click", () => showSection("admin"));
+    goSearch.addEventListener("click", () => showSection("search"));
+    goAdmin.addEventListener("click", () => showSection("admin"));
+
+    // ===== クライアント状態 =====
+    let videos = [];
+    let filteredVideos = [];
+    let currentPage = 1;
+    const PAGE_SIZE = 50;
+    let isAdmin = false; // 管理者かどうか（新規登録UI用）
+
+    // 簡易シソーラス
+    const synonymMap = {
+      "ねこ": ["ねこ", "ネコ", "猫"],
+      "ネコ": ["ねこ", "ネコ", "猫"],
+      "猫":   ["ねこ", "ネコ", "猫"],
+    };
+
+    // DOM
+    const searchInput = document.getElementById("searchInput");
+    const resultsDiv = document.getElementById("results");
+    const resultCount = document.getElementById("resultCount");
+
+    const adminPasswordInput = document.getElementById("adminPasswordInput");
+    const adminLoginButton = document.getElementById("adminLoginButton");
+    const adminLoginMessage = document.getElementById("adminLoginMessage");
+    const adminLogoutButton = document.getElementById("adminLogoutButton");
+    const adminLoginBox = document.getElementById("adminLoginBox");
+    const adminContentBox = document.getElementById("adminContentBox");
+
+    const registerVideoUrlInput = document.getElementById("registerVideoUrl");
+    const registerVideoButton = document.getElementById("registerVideoButton");
+    const registerVideoMessage = document.getElementById("registerVideoMessage");
+
+    const registerPlaylistUrlInput = document.getElementById("registerPlaylistUrl");
+    const registerPlaylistButton = document.getElementById("registerPlaylistButton");
+    const registerPlaylistMessage = document.getElementById("registerPlaylistMessage");
+
+    // ===== 日本語正規化 =====
+    function katakanaToHiragana(str) {
+      return str.replace(/[\u30a1-\u30f6]/g, (ch) =>
+        String.fromCharCode(ch.charCodeAt(0) - 0x60)
+      );
+    }
+
+    function normalizeJa(str) {
+      let s = (str || "").trim();
+      s = s.toLowerCase();
+      s = katakanaToHiragana(s);
+      return s;
+    }
+
+    // ===== YouTube 埋め込み用 =====
+    function extractYoutubeId(urlStr) {
+      try {
+        const u = new URL(urlStr);
+        const host = u.hostname.toLowerCase();
+
+        if (host === "youtu.be") {
+          return u.pathname.replace("/", "");
+        }
+        if (host.endsWith("youtube.com")) {
+          const v = u.searchParams.get("v");
+          if (v) return v;
+        }
+      } catch (e) {
+        return null;
+      }
+      return null;
+    }
+
+    // ===== API通信 =====
+    async function fetchVideos() {
+      try {
+        const resp = await fetch("/api/videos");
+        const data = await resp.json();
+        videos = data.videos || [];
+        applySearch(); // 初回は検索条件なしで全件
+      } catch (e) {
+        console.error("動画一覧の取得に失敗:", e);
+        if (resultsDiv) resultsDiv.textContent = "動画一覧の取得に失敗しました。";
+        if (resultCount) resultCount.textContent = "";
+      }
+    }
+
+    async function fetchAdminStatus() {
+      try {
+        const resp = await fetch("/api/admin/status");
+        const data = await resp.json();
+        isAdmin = !!data.isAdmin;
+        renderAdminUI();
+      } catch (e) {
+        console.error("admin status error:", e);
+      }
+    }
+
+    async function registerVideo() {
+      const url = registerVideoUrlInput.value.trim();
+      if (!url) {
+        registerVideoMessage.textContent = "URLを入力してください。";
+        return;
+      }
+      registerVideoMessage.textContent = "登録中...";
+
+      try {
+        const resp = await fetch("/api/register/video", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ videoUrl: url }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          registerVideoMessage.textContent =
+            `エラー: ${data.error || "登録に失敗しました"}`;
+          return;
+        }
+
+        if (data.alreadyExisted) {
+          registerVideoMessage.textContent =
+            `登録済みの動画です: ${data.title}`;
+        } else {
+          registerVideoMessage.textContent =
+            `登録しました: ${data.title}`;
+        }
+
+        registerVideoUrlInput.value = "";
+        await fetchVideos();
+      } catch (e) {
+        console.error(e);
+        registerVideoMessage.textContent = "通信エラーが発生しました。";
+      }
+    }
+
+    async function registerPlaylist() {
+      const url = registerPlaylistUrlInput.value.trim();
+      if (!url) {
+        registerPlaylistMessage.textContent = "再生リストのURLを入力してください。";
+        return;
+      }
+      registerPlaylistMessage.textContent = "再生リストから取得中...";
+
+      try {
+        const resp = await fetch("/api/register/playlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ playlistUrl: url }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          registerPlaylistMessage.textContent =
+            `エラー: ${data.error || "再生リスト登録に失敗しました"}`;
+          return;
+        }
+
+        registerPlaylistMessage.textContent =
+          `取得件数: ${data.fetched} / 新規登録: ${data.inserted} / 既存: ${data.skipped}`;
+
+        registerPlaylistUrlInput.value = "";
+        await fetchVideos();
+      } catch (e) {
+        console.error(e);
+        registerPlaylistMessage.textContent = "通信エラーが発生しました。";
+      }
+    }
+
+    async function updateTags(videoId, tagsText) {
+      const resp = await fetch("/api/videos/update-tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: videoId, tagsText }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) {
+        throw new Error(data.error || "タグ更新に失敗しました");
+      }
+    }
+
+    // ===== 管理者UI =====
+    function renderAdminUI() {
+      if (isAdmin) {
+        adminLoginBox.classList.add("hidden");
+        adminContentBox.classList.remove("hidden");
+      } else {
+        adminLoginBox.classList.remove("hidden");
+        adminContentBox.classList.add("hidden");
+      }
+    }
+
+    adminLoginButton.addEventListener("click", async () => {
+      const pw = adminPasswordInput.value.trim();
+      if (!pw) {
+        adminLoginMessage.textContent = "パスワードを入力してください。";
+        return;
+      }
+      adminLoginMessage.textContent = "ログイン中...";
+
+      try {
+        const resp = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: pw }),
+        });
+        const data = await resp.json();
+        if (resp.ok && data.ok) {
+          isAdmin = true;
+          adminPasswordInput.value = "";
+          adminLoginMessage.textContent = "ログインしました。";
+          renderAdminUI();
+        } else {
+          adminLoginMessage.textContent = data.error || "ログインに失敗しました。";
+        }
+      } catch (e) {
+        console.error(e);
+        adminLoginMessage.textContent = "通信エラーが発生しました。";
+      }
+    });
+
+    adminLogoutButton.addEventListener("click", async () => {
+      try {
+        await fetch("/api/admin/logout", { method: "POST" });
+      } catch (e) {
+        console.error(e);
+      }
+      isAdmin = false;
+      renderAdminUI();
+    });
+
+    // ===== 検索 =====
+    function applySearch() {
+      const raw = (searchInput && searchInput.value || "").trim();
+
+      let filtered;
+      if (raw === "") {
+        filtered = videos.slice();
+      } else {
+        const normalizedRaw = normalizeJa(raw);
+        let queryCandidates = [raw];
+
+        for (const [key, group] of Object.entries(synonymMap)) {
+          if (normalizeJa(key) === normalizedRaw) {
+            queryCandidates = group;
+            break;
+          }
+        }
+        const normalizedCandidates = queryCandidates.map((q) => normalizeJa(q));
+
+        filtered = videos.filter((video) => {
+          const tags = video.tags || [];
+          const haystack = normalizeJa(
+            (video.title || "") + " " + tags.join(" ")
+          );
+          return normalizedCandidates.some((q) => haystack.includes(q));
+        });
+      }
+
+      filteredVideos = filtered;
+      currentPage = 1;
+      renderResults();
+    }
+
+    function renderResults() {
+      if (!resultsDiv || !resultCount) return;
+
+      resultsDiv.innerHTML = "";
+
+      const totalHits = filteredVideos.length;
+      const shownCount = Math.min(totalHits, currentPage * PAGE_SIZE);
+      const listToShow = filteredVideos.slice(0, shownCount);
+
+      resultCount.textContent =
+        `ヒット件数: ${totalHits} / 表示件数: ${shownCount} / 登録件数: ${videos.length}`;
+
+      if (listToShow.length === 0) {
+        resultsDiv.textContent = "該当する動画がありません。";
+        return;
+      }
+
+      listToShow.forEach((video) => {
+        const card = document.createElement("div");
+        card.className = "video-card";
+
+        const title = document.createElement("div");
+        title.className = "video-title";
+        title.textContent = video.title;
+
+        const urlDiv = document.createElement("div");
+        urlDiv.className = "video-url";
+        const link = document.createElement("a");
+        link.href = video.url;
+        link.target = "_blank";
+        link.textContent = video.url;
+        urlDiv.appendChild(link);
+
+        const tagsDiv = document.createElement("div");
+        tagsDiv.className = "video-tags";
+        const tags = video.tags && video.tags.length > 0
+          ? video.tags.join(", ")
+          : "なし";
+        tagsDiv.textContent = "タグ: " + tags;
+
+        card.appendChild(title);
+        card.appendChild(urlDiv);
+        card.appendChild(tagsDiv);
+
+        // ★ タグ編集ボタンは誰でも表示
+        const editBtn = document.createElement("button");
+        editBtn.className = "button-small";
+        editBtn.textContent = "タグ編集";
+        editBtn.addEventListener("click", async () => {
+          const current = (video.tags || []).join(", ");
+          const input = window.prompt(
+            `動画タイトル: ${video.title}\nタグをカンマ区切りで編集してください:`,
+            current
+          );
+          if (input === null) return;
+          try {
+            await updateTags(video.id, input);
+            await fetchVideos();
+          } catch (e) {
+            console.error(e);
+            window.alert("タグ更新に失敗しました。");
+          }
+        });
+        card.appendChild(editBtn);
+
+        // サムネ→クリックしたときだけ iframe をロード
+        const videoId = extractYoutubeId(video.url);
+        if (videoId) {
+          const playerDiv = document.createElement("div");
+          playerDiv.className = "video-player";
+
+          const thumb = document.createElement("img");
+          thumb.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+          thumb.alt = video.title;
+          thumb.style.width = "320px";
+          thumb.style.height = "180px";
+          thumb.style.objectFit = "cover";
+          thumb.style.display = "block";
+          thumb.style.cursor = "pointer";
+
+          const playBtn = document.createElement("button");
+          playBtn.className = "button-small";
+          playBtn.textContent = "▶ この動画を再生";
+
+          function loadIframe() {
+            if (playerDiv.dataset.loaded === "1") return;
+            playerDiv.dataset.loaded = "1";
+            playerDiv.innerHTML = "";
+
+            const iframe = document.createElement("iframe");
+            iframe.width = "320";
+            iframe.height = "180";
+            iframe.src = `https://www.youtube.com/embed/${videoId}`;
+            iframe.title = "YouTube video player";
+            iframe.frameBorder = "0";
+            iframe.allow =
+              "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+            iframe.allowFullscreen = true;
+            iframe.loading = "lazy";
+
+            playerDiv.appendChild(iframe);
+          }
+
+          thumb.addEventListener("click", loadIframe);
+          playBtn.addEventListener("click", loadIframe);
+
+          playerDiv.appendChild(thumb);
+          playerDiv.appendChild(playBtn);
+          card.appendChild(playerDiv);
+        }
+
+        resultsDiv.appendChild(card);
+      });
+
+      if (shownCount < totalHits) {
+        const moreDiv = document.createElement("div");
+        moreDiv.className = "more-container";
+
+        const moreBtn = document.createElement("button");
+        moreBtn.className = "button";
+        moreBtn.textContent = "もっと表示（さらに50件）";
+        moreBtn.addEventListener("click", () => {
+          currentPage += 1;
+          renderResults();
+        });
+
+        moreDiv.appendChild(moreBtn);
+        resultsDiv.appendChild(moreDiv);
+      }
+    }
+
+    // ===== イベント & 初期化 =====
+    if (searchInput) {
+      searchInput.addEventListener("input", applySearch);
+    }
+    if (registerVideoButton) {
+      registerVideoButton.addEventListener("click", registerVideo);
+    }
+    if (registerPlaylistButton) {
+      registerPlaylistButton.addEventListener("click", registerPlaylist);
+    }
+
+    showSection("home");
+    fetchVideos();
+    fetchAdminStatus();
+  </script>
+</body>
+</html>
